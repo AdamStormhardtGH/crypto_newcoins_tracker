@@ -43,3 +43,32 @@ This job will pull the market price and other details like volume etc for a spec
 ## Setting up for lambda deployment
 
 run `pip install -r requirements.txt --target ./package` to install all required packages listed in the requirements.txt to a local directory. This helps us deploy a zip
+
+
+
+
+## setting up for local deployment
+
+here's the env file you should make (.env in your root)
+```
+BUCKET = "coin-analysis-data-ar-staging"
+SNAPSHOT_PATH = "snapshots"
+SNAPSHOT_FILENAME = "snapshot.json"
+
+WATCHLIST_PATH = "watchlist"
+WATCHLIST_FILENAME = "watchlist.json"
+
+COINS_PATH = "coins"
+COINS_FILENAME = "watchlist.json"
+
+
+QUERY_LOGIC_VOLUME = 1300000
+QUERY_LOGIC_PRICE = 0.003
+
+ATHENA_DATABASE = "coin_analysis"
+ATHENA_WATCHLIST_TABLE = "watchlist"
+ATHENA_MARKETDETAILS_TABLE = "marketdetails"
+
+DISCORD_BOT_WEBHOOK = "<hook here>
+
+```

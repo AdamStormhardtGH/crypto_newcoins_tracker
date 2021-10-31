@@ -3,9 +3,11 @@ Shared utilities
 """
 
 import arrow, json
-import re
+import re, os
 import boto3
-
+import requests
+from dotenv import load_dotenv
+load_dotenv()
 
 def datetime_now():
     """
@@ -76,3 +78,17 @@ def read_from_storage(bucket, filename_path):
     )
     return response
 
+def notify_discord_bot(text_string):
+    """
+    notifies the discord webhook
+    """
+    DISCORD_BOT_WEBHOOK = os.getenv('DISCORD_BOT_WEBHOOK')
+
+    data = {
+        "content": str(text_string)
+    }
+
+    requests.post(url=DISCORD_BOT_WEBHOOK, json=data)
+
+
+# notify_discord_bot("yo")

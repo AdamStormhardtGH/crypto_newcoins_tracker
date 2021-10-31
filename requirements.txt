@@ -3,3 +3,4 @@ arrow
 super-json-normalize==0.1.0
 boto3==1.19.7
 python-dotenv==0.19.1
+requests

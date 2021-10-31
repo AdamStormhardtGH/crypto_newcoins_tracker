@@ -2,7 +2,7 @@
 Will get a list of all coins in the market at the moment
 """
 from pycoingecko import CoinGeckoAPI
-import utils
+from . import utils
 
 
 def get_market_snapshot():
@@ -32,5 +32,5 @@ def get_coins_list():
     cg = CoinGeckoAPI()
     return cg.get_coins_list()
 
-print(get_market_snapshot())
+# print(get_market_snapshot())
 

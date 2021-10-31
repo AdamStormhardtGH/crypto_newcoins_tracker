@@ -3,12 +3,12 @@ Gets the watchlist and queries details for each coin in watchlist
 Outputs details in partitioned watchlist report json
 """
 from datetime import date
-from dotenv import load_dotenv
 import json, os, time
 import boto3
 from pycoingecko import CoinGeckoAPI
-import utils
+from . import utils
 
+from dotenv import load_dotenv
 load_dotenv()
 
 def orchestrate_watchlist_details_check():
@@ -39,7 +39,8 @@ def orchestrate_watchlist_details_check():
     market_coins_jsonl = utils.list_of_dicts_to_jsonl(market_coins)
     status = utils.write_to_storage(data=market_coins_jsonl, bucket=BUCKET, filename_path=path)
 
-    return status
+    return market_coins
+    # f"Updated market details for {len(market_coins)} coins in watch list"
 
 
 ###all the components are below
@@ -49,7 +50,7 @@ def get_watch_list():
     """
     performs a query from athena to get the watch list
     """
-    today_date_epoch = utils.startofday_epohc_now
+    # today_date_epoch = utils.startofday_epohc_now
     
     
 
@@ -136,7 +137,7 @@ def get_coins_details(coin_id ):
     end_date is required. this allows us to cap the report in days
     """
     cg = CoinGeckoAPI()
-    coin_details = cg.get_coin_market_chart_by_id(id=coin_id,vs_currency="aud", days="1")
+    coin_details = cg.get_coin_market_chart_by_id(id=coin_id,vs_currency="aud", days="0")
     latest_coin_details = extract_latest_market_value_for_coin(coin_details)
     latest_coin_details["id"] = coin_id #add id to help us joins
 
@@ -165,4 +166,7 @@ def extract_latest_market_value_for_coin(coin_details):
 # print(get_coins_details('akira') )
 # print(utils.startofday_epohc_now() )
 
-print(orchestrate_watchlist_details_check() )
+# print(orchestrate_watchlist_details_check() )
+
+# cg = CoinGeckoAPI()
+# print(cg.get_coin_market_chart_by_id(id="shibamask",vs_currency="aud", days="0") )
