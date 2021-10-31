@@ -35,3 +35,11 @@ TODO:
 ## Job 3 - Pull Today's Details for watched coins
 
 This job will pull the market price and other details like volume etc for a specific coin and for each 
+
+
+
+--------
+
+## Setting up for lambda deployment
+
+run `pip install -r requirements.txt --target ./package` to install all required packages listed in the requirements.txt to a local directory. This helps us deploy a zip
