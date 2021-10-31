@@ -14,6 +14,7 @@ cp ./lambda_function.py ./zip_builds/files/
 echo "Project files copied. Installing packages..."
 pip install -r requirements.txt --target ./zip_builds/files/
 echo "Copy complete. Zipping..."
-zip -r ./zip_builds/deployment-package.zip ./zip_builds/files/
+cd ./zip_builds/files/
+zip -r ../deployment-package.zip .
 rm -rf ./zip_builds/files/**
 echo "Complete"

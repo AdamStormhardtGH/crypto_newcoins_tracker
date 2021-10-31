@@ -5,7 +5,7 @@ from src import getwatchlistdetails
 from src import utils
 
 
-def main(event, context):   
+def lambda_handler(event, context):   
     """
     main orchestration executable.
     Runs the job
@@ -33,5 +33,3 @@ def main(event, context):
     utils.notify_discord_bot(report)
 
     return "completed job "
-if __name__ == "__main__":   
-    main('', '')

@@ -7,6 +7,7 @@ import json, os, time
 import boto3
 from pycoingecko import CoinGeckoAPI
 from . import utils
+# import utils
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -81,8 +82,16 @@ def get_watch_list():
 
     execution_id = athena_watch_list_query_id['QueryExecutionId']
     
-    #hack - lets wait with a sleep
-    time.sleep(10) #10 seconds wait
+    #check status of query
+    status = 'QUEUED'
+    while status == 'RUNNING' or status == 'QUEUED':
+        time.sleep(1)
+        status = client.get_query_execution(QueryExecutionId=execution_id)['QueryExecution']['Status']['State']
+        # print(f"{status} : {execution_id} \n\n")
+
+    if status == 'FAILED' or status == 'CANCELLED':
+        print("query failed!")
+        # exit(0)
 
     athena_watch_list_query_data = client.get_query_results(
         QueryExecutionId=execution_id,
