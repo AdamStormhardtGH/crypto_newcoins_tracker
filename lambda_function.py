@@ -35,4 +35,4 @@ def lambda_handler(event, context):
     return "completed job "
 
 
-lambda_handler("yo",{})
+# lambda_handler("yo",{})
