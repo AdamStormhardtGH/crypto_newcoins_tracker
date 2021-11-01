@@ -156,6 +156,11 @@ def extract_latest_market_value_for_coin(coin_details):
     """
     for coingecko, looks at market data and only gets the values with associated epoch 
     """
+    try:
+        epoch = utils.epoch_to_timestamp(coin_details["prices"][-1][0])
+    except:
+        epoch = utils.datetime_now().format("X")
+
 
     latest_coin_data = {
         "date": utils.epoch_to_timestamp(coin_details["prices"][-1][0]),

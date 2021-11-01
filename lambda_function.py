@@ -25,11 +25,14 @@ def lambda_handler(event, context):
 
     watched_coins_formatted = ""
     for each_watched_coin in coins_checked:
-        # price = "{:.50f}".format(each_watched_coin['total_volumes'])
-        watched_coins_formatted = f"{watched_coins_formatted}{each_watched_coin['id']} - 24hr volume: ${round(each_watched_coin['total_volumes']/1000000,2)} Million \n"
+        price = "{:.12f}".format(each_watched_coin['prices'])
+        watched_coins_formatted = f"{watched_coins_formatted}{each_watched_coin['id']} - 24hr volume: ${round(each_watched_coin['total_volumes']/1000000,2)} Million at ${price}\n"
 
     report = f"""
     {utils.datetime_now().format()}(UTC)\n**New Coins: {len(new_coins)}**{new_coins_formatted} \n\n**Watched Coins**\n{watched_coins_formatted}"""
     utils.notify_discord_bot(report)
 
     return "completed job "
+
+
+lambda_handler("yo",{})

@@ -31,8 +31,12 @@ def epoch_to_timestamp(epoch_string):
     """
     converts data from epoch to athena friendly timestamp
     """
+    
     epoch_string_clean = str(int(epoch_string/1000) ) #remove milliseconds
-    formatted_timestamp = arrow.get(epoch_string_clean,"X").format("YYYY-MM-DD HH:mm:ss")
+    try:
+        formatted_timestamp = arrow.get(epoch_string_clean,"X").format("YYYY-MM-DD HH:mm:ss")
+    except:
+        formatted_timestamp = datetime_now().format("YYYY-MM-DD HH:mm:ss")
     return formatted_timestamp
 
 
