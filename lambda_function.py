@@ -26,7 +26,10 @@ def lambda_handler(event, context):
     watched_coins_formatted = ""
     for each_watched_coin in coins_checked:
         price = "{:.12f}".format(each_watched_coin['prices'])
-        watched_coins_formatted = f"{watched_coins_formatted}{each_watched_coin['id']} - 24hr volume: ${round(each_watched_coin['total_volumes']/1000000,2)} Million at ${price}\n"
+        buy = ""
+        if each_watched_coin['prices'] <0.003 and each_watched_coin['total_volumes'] > 1300000:
+            buy = "🔥"
+        watched_coins_formatted = f"{watched_coins_formatted}{each_watched_coin['id']} - 24hr volume: ${round(each_watched_coin['total_volumes']/1000000,2)} Million at ${price} {buy}\n"
 
     report = f"""
     {utils.datetime_now().format()}(UTC)\n**New Coins: {len(new_coins)}**{new_coins_formatted} \n\n**Watched Coins**\n{watched_coins_formatted}"""
@@ -35,4 +38,4 @@ def lambda_handler(event, context):
     return "completed job "
 
 
-# lambda_handler("yo",{})
+lambda_handler("yo",{})
