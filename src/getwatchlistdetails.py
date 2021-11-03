@@ -18,7 +18,7 @@ def orchestrate_watchlist_details_check():
     orchestrate the querying and processing and storage of market data for coins on watchlist
     then store to s3
     """
-
+    print("orchestrate_watchlist_details_check()")
     #query all coins on watchlist and get updated data based on query time (like now)
     watch_list = get_watch_list()
     market_coins = get_coins_data_from_market(watchlist=watch_list)
@@ -87,6 +87,7 @@ def get_watch_list():
     while status == 'RUNNING' or status == 'QUEUED':
         time.sleep(1)
         status = client.get_query_execution(QueryExecutionId=execution_id)['QueryExecution']['Status']['State']
+        print(status)
         # print(f"{status} : {execution_id} \n\n")
 
     if status == 'FAILED' or status == 'CANCELLED':
@@ -134,7 +135,12 @@ def get_coins_data_from_market(watchlist):
 
     coins_with_details = []
     for each_coin in watchlist:
-        coins_with_details.append(get_coins_details(each_coin) )
+        time.sleep(1.1)
+        print(f"looking for {each_coin}")
+        try: 
+            coins_with_details.append(get_coins_details(each_coin) )
+        except:
+            print(f"skipped coin {each_coin} due to errors")
     
     return coins_with_details
 
@@ -145,8 +151,9 @@ def get_coins_details(coin_id ):
     pulled out into its own component so we can easily replace 
     end_date is required. this allows us to cap the report in days
     """
+    print(f"getting coin details for: {coin_id}")
     cg = CoinGeckoAPI()
-    coin_details = cg.get_coin_market_chart_by_id(id=coin_id,vs_currency="aud", days="0")
+    coin_details = cg.get_coin_market_chart_by_id(id=coin_id,vs_currency="aud", days="max", interval="daily")  #get the 24 hour 
     latest_coin_details = extract_latest_market_value_for_coin(coin_details)
     latest_coin_details["id"] = coin_id #add id to help us joins
 
@@ -158,10 +165,11 @@ def extract_latest_market_value_for_coin(coin_details):
     """
     try:
         latest_coin_data = {
-            "date": utils.epoch_to_timestamp(coin_details["prices"][-1][0]),
-            "prices": coin_details["prices"][-1][-1],
-            "market_caps": coin_details["market_caps"][-1][-1],
-            "total_volumes": coin_details["total_volumes"][-1][-1],
+            "date": utils.epoch_to_timestamp(coin_details["prices"][-2][0]), #was -1 for latest. lets just get the minight volume
+            "prices": coin_details["prices"][-2][-1],
+            "market_caps": coin_details["market_caps"][-2][-1],
+            "total_volumes": coin_details["total_volumes"][-2][-1],
+            "age": len(coin_details["total_volumes"])-2
         }
     except:
         latest_coin_data = {
@@ -169,6 +177,7 @@ def extract_latest_market_value_for_coin(coin_details):
             "prices": 0,
             "market_caps": 0,
             "total_volumes": 0,
+            "age": 0
         }
 
 
@@ -189,3 +198,5 @@ def extract_latest_market_value_for_coin(coin_details):
 
 # cg = CoinGeckoAPI()
 # print(cg.get_coin_market_chart_by_id(id="shibamask",vs_currency="aud", days="0") )
+
+

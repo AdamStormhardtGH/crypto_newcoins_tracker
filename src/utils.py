@@ -2,7 +2,7 @@
 Shared utilities
 """
 
-import arrow, json
+import arrow, json, time
 import re, os
 import boto3
 import requests
@@ -88,11 +88,40 @@ def notify_discord_bot(text_string):
     """
     DISCORD_BOT_WEBHOOK = os.getenv('DISCORD_BOT_WEBHOOK')
 
-    data = {
-        "content": str(text_string)
-    }
+    list_of_messages = split_string_discord(text_string)
 
-    requests.post(url=DISCORD_BOT_WEBHOOK, json=data)
+    for each_message in list_of_messages:
+        time.sleep(.5)
+        data = {
+            "content": str(each_message)
+        }
+        response = requests.post(url=DISCORD_BOT_WEBHOOK, json=data)
+        print(response)
+    
+    print(f"notification complete")
 
 
-# notify_discord_bot("yo")
+def split_string_discord(input_string,character_limit=1500):
+    """
+    splits a string into chunks for discord notifications
+    """
+    chunks = input_string.split('\n')
+    
+    print(chunks)
+
+    messages = []
+    chunk_string = ""
+    for each_item in chunks:
+        old_chunkstring = chunk_string
+        new_chunk_string = f"{chunk_string}\n{each_item}"
+        if len(new_chunk_string) > character_limit:
+            messages.append(old_chunkstring)
+            chunk_string = each_item
+        else:
+            chunk_string = new_chunk_string 
+        if each_item == chunks[-1]:
+            print("last message")
+            messages.append(chunk_string)
+    
+    return messages
+
