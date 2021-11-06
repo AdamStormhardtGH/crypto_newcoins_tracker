@@ -126,6 +126,6 @@ dmypy.json
 
 
 zip_builds/deployment_package.zip
-zip_builds/files/
+zip_builds/**
 
 local_testing/
