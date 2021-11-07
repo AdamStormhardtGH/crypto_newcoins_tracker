@@ -148,12 +148,14 @@ def send_to_sqs(coin_id):
     # Create SQS client
     sqs = boto3.client('sqs')
 
-    queue_url = 'SQS_QUEUE_URL'
+    SQS_QUEUE_URL = os.getenv('SQS_QUEUE_URL')
 
     # Send message to SQS queue
     response = sqs.send_message(
-        QueueUrl=queue_url,
-        DelaySeconds=1,
+        QueueUrl=SQS_QUEUE_URL,
+        # DelaySeconds=1,
+        MessageGroupId="coin-getter",
+        MessageDeduplicationId=str(coin_id),
         MessageAttributes={
             'coin_id': {
                 'DataType': 'String',
@@ -167,20 +169,89 @@ def send_to_sqs(coin_id):
 
     print(response['MessageId'])
 
-def read_sqs_message(sqs_payload, key_to_find="coin_id"):
+
+def read_sqs_message(sqs_payload, key_to_find="coin_id", delivery_method="push"):
     """
     will read sqs messages and return the body message 
+    There are multiple ways to parse messages from sqs, so we need to be aware of the deliverymethod
+    delivery_method:
+    "pull" - we're pulling from the queue
+    "push" - we're being pushed the data via like a lambda trigger
     """
-    # try:
-    # message = dict(sqs_payload)
-    body = sqs_payload["Records"][0]["messageAttributes"][key_to_find]["stringValue"]
-    print(body)
+    
+    if delivery_method == "push":
+        data = sqs_payload["Records"][0]["messageAttributes"][key_to_find]["stringValue"]
+    elif delivery_method == "pull":
+        data = sqs_payload["Messages"][0]["MessageAttributes"][key_to_find]["StringValue"]
+    else:
+        raise Exception(f"Unable to read data from sqs - delivery method {delivery_method} not supported")
+
     # ["MessageAttributes"][key_to_find]["Value"]
     # key_we_need = body["MessageAttributes"][key_to_find]["Value"]
-    return body
+    return data
+
+def delete_message_from_queue(ReceiptHandle):
+    """
+    will delete a message from the sqs queue
+    response = client.delete_message(
+        QueueUrl='string',
+        ReceiptHandle='string'
+    )
+    """
+    sqs = boto3.client('sqs')
+    SQS_QUEUE_URL = os.getenv('SQS_QUEUE_URL')
+
+    response = sqs.delete_message(
+        QueueUrl=SQS_QUEUE_URL,
+        ReceiptHandle=ReceiptHandle
+    )
+    return response
+
+def read_from_sqs_queue():
+    """
+    will read a message from the sqs queue
+    apparently this can be unreliable, so we should try mulitple times. 
+    eg. 5 times
+    """
+    sqs = boto3.client('sqs')
+
+    SQS_QUEUE_URL = os.getenv('SQS_QUEUE_URL')
+
+    retries = 0
+    retries_max = 5
+    data_found = False
+    attempt_id = f"{arrow.utcnow().format('X')}-getcoin"
+    data_from_message = None
+    while retries < retries_max and data_found == False:
+        response = sqs.receive_message(
+            QueueUrl=SQS_QUEUE_URL,
+            AttributeNames=[
+                
+            ],
+            MessageAttributeNames=[
+                'coin_id',
+            ],
+            MaxNumberOfMessages=1,
+            VisibilityTimeout=123,
+            WaitTimeSeconds=10,
+            ReceiveRequestAttemptId=attempt_id
+        )
+        try:
+            data_from_message = read_sqs_message(sqs_payload=response, key_to_find="coin_id", delivery_method="pull") #["Messages"][0]["MessageAttributes"]["coin_id"]["StringValue"]
+            data_found = True
+            print(f"FOUND {data_from_message}")
+        except:
+            print("did not find")
+            retries = retries + 1
+
+
+    return data_from_message
+
 
     # except Exception as e:
     #     print(f"unable to parse {key_to_find} from sqs message: {sqs_payload} ")
     # exit()
 
 
+# send_to_sqs('adam')
+# read_from_sqs_queue()

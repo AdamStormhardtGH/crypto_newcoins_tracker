@@ -67,7 +67,7 @@ def write_to_storage(data, bucket, filename_path):
     """"
     will write data to a storage location
     """
-
+    print("performing putObject")
     client = boto3.client('s3')
     return client.put_object(Body=data, Bucket=bucket, Key=filename_path)
     
@@ -107,21 +107,110 @@ def split_string_discord(input_string,character_limit=1500):
     """
     chunks = input_string.split('\n')
     
-    print(chunks)
+    # print(chunks)
 
     messages = []
     chunk_string = ""
     for each_item in chunks:
         old_chunkstring = chunk_string
         new_chunk_string = f"{chunk_string}\n{each_item}"
+
         if len(new_chunk_string) > character_limit:
             messages.append(old_chunkstring)
             chunk_string = each_item
-        else:
-            chunk_string = new_chunk_string 
-        if each_item == chunks[-1]:
+        elif each_item == chunks[-1]:
             print("last message")
             messages.append(chunk_string)
+        else:
+            chunk_string = new_chunk_string 
+        
     
     return messages
 
+
+def batch_send_to_sqs(coin_list,days=1):
+    """
+    uses batch mode for sqs send to allow 10 coins to be queued per
+    """
+    sqs = boto3.client('sqs')
+
+    # queue = sqsResource.get_queue_by_name(QueueName='coin-watch-list')
+    SQS_QUEUE_URL = os.getenv('SQS_QUEUE_URL')
+    maxBatchSize = 1 #current maximum allowed is 10
+    chunks = [coin_list[x:x+maxBatchSize] for x in range(0, len(coin_list), maxBatchSize)]
+    time_to_wait = 0
+    time_to_wait_interval = 2 #seconds
+    for chunk in chunks:
+        
+        entries = []
+        for x in chunk:
+            entry = {
+                    'Id': str(x),
+                    'MessageBody': 'Sent for coin analysis', 
+                     #'MessageGroupId': 'coin-getter',
+                     #'MessageDeduplicationId': str(x),
+                     'MessageAttributes': {
+                        'coin_id': {
+                            'DataType': 'String',
+                            'StringValue': str(x)
+                        },
+                        'days': {
+                            'DataType': 'String',
+                            'StringValue': str(days)
+                        }
+                     }
+            }
+            entries.append(entry)
+            wait_time = time_to_wait + time_to_wait_interval
+        response = sqs.send_message_batch(QueueUrl=SQS_QUEUE_URL,Entries=entries)
+        print(response)
+
+def send_to_sqs(coin_id):
+    """
+    send a message to the sqs queue specified by the environment variable
+    """
+    # Create SQS client
+    sqs = boto3.client('sqs')
+
+    SQS_QUEUE_URL = os.getenv('SQS_QUEUE_URL')
+
+    # Send message to SQS queue
+    response = sqs.send_message(
+        QueueUrl=SQS_QUEUE_URL,
+        DelaySeconds=0,
+        MessageGroupId="coin-getter",
+        MessageDeduplicationId=str(coin_id),
+        MessageAttributes={
+            'coin_id': {
+                'DataType': 'String',
+                'StringValue': str(coin_id)
+            }
+        },
+        MessageBody=(
+            'Sent for coin analysis'
+        )
+    )
+
+    print(response['MessageId'])
+
+def dynamo_put_coin(coin_id, days, dynamodb=None):
+    
+    table = dynamodb.Table('watchlist')
+    response = table.put_item(
+       Item={
+            'year': year,
+            'title': title,
+            'info': {
+                'plot': plot,
+                'rating': rating
+            }
+        }
+    )
+    return response
+
+
+# send_to_sqs(str("bitcoin"))
+# send_to_sqs(str("SurfMoon"))
+
+# mylist = ["shibgf"]
+# batch_send_to_sqs(mylist,days='max')
