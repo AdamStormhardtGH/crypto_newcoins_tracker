@@ -3,21 +3,38 @@ Gets the watchlist and queries details for each coin in watchlist
 Outputs details in partitioned watchlist report json
 """
 from datetime import date
-from dotenv import load_dotenv
 import json, os, time
 import boto3
 from pycoingecko import CoinGeckoAPI
-import utils
+from . import utils
+# import utils
 
+from dotenv import load_dotenv
 load_dotenv()
+
+def queue_coins_to_get(days=1):
+    """
+    will prepare list of coin ids we need and enqueue them
+    """
+    print("queue_coins_to_get()")
+    watch_list = get_watch_list() #expects list
+    cleaned_queue = []
+    for each_coin in watch_list:
+        if len(each_coin)>0:
+            if each_coin not in cleaned_queue:
+                cleaned_queue.append(each_coin)
+                
+    utils.batch_send_to_sqs(coin_list=cleaned_queue,days=days)
+    print("coins enqueued")
 
 def orchestrate_watchlist_details_check():
     """
+    ** FOR EC2 ***
     *** MAIN ORCHESTRATOR FOR THIS FUNCTIONALITY ***
     orchestrate the querying and processing and storage of market data for coins on watchlist
     then store to s3
     """
-
+    print("orchestrate_watchlist_details_check()")
     #query all coins on watchlist and get updated data based on query time (like now)
     watch_list = get_watch_list()
     market_coins = get_coins_data_from_market(watchlist=watch_list)
@@ -39,7 +56,8 @@ def orchestrate_watchlist_details_check():
     market_coins_jsonl = utils.list_of_dicts_to_jsonl(market_coins)
     status = utils.write_to_storage(data=market_coins_jsonl, bucket=BUCKET, filename_path=path)
 
-    return status
+    return market_coins
+    # f"Updated market details for {len(market_coins)} coins in watch list"
 
 
 ###all the components are below
@@ -49,7 +67,7 @@ def get_watch_list():
     """
     performs a query from athena to get the watch list
     """
-    today_date_epoch = utils.startofday_epohc_now
+    # today_date_epoch = utils.startofday_epohc_now
     
     
 
@@ -57,7 +75,7 @@ def get_watch_list():
     ATHENA_DATABASE = os.getenv('ATHENA_DATABASE')
 
     query = f"""
-        SELECT id
+        SELECT distinct id
         from {ATHENA_WATCHLIST_TABLE}
         where id != ''
         """ #change this to id for prod
@@ -80,8 +98,17 @@ def get_watch_list():
 
     execution_id = athena_watch_list_query_id['QueryExecutionId']
     
-    #hack - lets wait with a sleep
-    time.sleep(10) #10 seconds wait
+    #check status of query
+    status = 'QUEUED'
+    while status == 'RUNNING' or status == 'QUEUED':
+        time.sleep(1)
+        status = client.get_query_execution(QueryExecutionId=execution_id)['QueryExecution']['Status']['State']
+        print(status)
+        # print(f"{status} : {execution_id} \n\n")
+
+    if status == 'FAILED' or status == 'CANCELLED':
+        print("query failed!")
+        # exit(0)
 
     athena_watch_list_query_data = client.get_query_results(
         QueryExecutionId=execution_id,
@@ -124,7 +151,12 @@ def get_coins_data_from_market(watchlist):
 
     coins_with_details = []
     for each_coin in watchlist:
-        coins_with_details.append(get_coins_details(each_coin) )
+        time.sleep(1.1)
+        print(f"looking for {each_coin}")
+        try: 
+            coins_with_details.append(get_coins_details(each_coin) )
+        except:
+            print(f"skipped coin {each_coin} due to errors")
     
     return coins_with_details
 
@@ -135,8 +167,9 @@ def get_coins_details(coin_id ):
     pulled out into its own component so we can easily replace 
     end_date is required. this allows us to cap the report in days
     """
+    print(f"getting coin details for: {coin_id}")
     cg = CoinGeckoAPI()
-    coin_details = cg.get_coin_market_chart_by_id(id=coin_id,vs_currency="aud", days="1")
+    coin_details = cg.get_coin_market_chart_by_id(id=coin_id,vs_currency="aud", days="max", interval="daily")  #get the 24 hour 
     latest_coin_details = extract_latest_market_value_for_coin(coin_details)
     latest_coin_details["id"] = coin_id #add id to help us joins
 
@@ -146,13 +179,25 @@ def extract_latest_market_value_for_coin(coin_details):
     """
     for coingecko, looks at market data and only gets the values with associated epoch 
     """
+    try:
+        latest_coin_data = {
+            "date": utils.epoch_to_timestamp(coin_details["prices"][-2][0]), #was -1 for latest. lets just get the minight volume
+            "prices": coin_details["prices"][-2][-1],
+            "market_caps": coin_details["market_caps"][-2][-1],
+            "total_volumes": coin_details["total_volumes"][-2][-1],
+            "age": len(coin_details["total_volumes"])-2
+        }
+    except:
+        latest_coin_data = {
+            "date": utils.datetime_now().format("YYYY-MM-DD HH:mm:ss"),
+            "prices": 0,
+            "market_caps": 0,
+            "total_volumes": 0,
+            "age": 0
+        }
 
-    latest_coin_data = {
-        "date": utils.epoch_to_timestamp(coin_details["prices"][-1][0]),
-        "prices": coin_details["prices"][-1][-1],
-        "market_caps": coin_details["market_caps"][-1][-1],
-        "total_volumes": coin_details["total_volumes"][-1][-1],
-    }
+
+    
 
     return latest_coin_data
 
@@ -165,4 +210,9 @@ def extract_latest_market_value_for_coin(coin_details):
 # print(get_coins_details('akira') )
 # print(utils.startofday_epohc_now() )
 
-print(orchestrate_watchlist_details_check() )
+# print(orchestrate_watchlist_details_check() )
+
+# cg = CoinGeckoAPI()
+# print(cg.get_coin_market_chart_by_id(id="shibamask",vs_currency="aud", days="0") )
+
+

@@ -27,6 +27,22 @@ def startofday_epohc_now():
     
     return now_epoch
 
+def partition_path_from_date(input_date):
+    """
+    returns path for s3 partitioning from date:
+    eg.
+    `2021-11-27 00:00:00`
+    becomes: 
+    `year=2021/month=11/day=27`
+    """
+    date_value = arrow.get(input_date) #expects timestamp
+    year = date_value.year
+    month = date_value.month
+    day = date_value.day
+
+    return f"year={year}/month={month}/day={day}"
+
+
 def epoch_to_timestamp(epoch_string):
     """
     converts data from epoch to athena friendly timestamp
@@ -67,7 +83,7 @@ def write_to_storage(data, bucket, filename_path):
     """"
     will write data to a storage location
     """
-    print("performing putObject")
+
     client = boto3.client('s3')
     return client.put_object(Body=data, Bucket=bucket, Key=filename_path)
     
@@ -107,63 +123,23 @@ def split_string_discord(input_string,character_limit=1500):
     """
     chunks = input_string.split('\n')
     
-    # print(chunks)
+    print(chunks)
 
     messages = []
     chunk_string = ""
     for each_item in chunks:
         old_chunkstring = chunk_string
         new_chunk_string = f"{chunk_string}\n{each_item}"
-
         if len(new_chunk_string) > character_limit:
             messages.append(old_chunkstring)
             chunk_string = each_item
-        elif each_item == chunks[-1]:
-            print("last message")
-            messages.append(chunk_string)
         else:
             chunk_string = new_chunk_string 
-        
+        if each_item == chunks[-1]:
+            print("last message")
+            messages.append(chunk_string)
     
     return messages
-
-
-def batch_send_to_sqs(coin_list,days=1):
-    """
-    uses batch mode for sqs send to allow 10 coins to be queued per
-    """
-    sqs = boto3.client('sqs')
-
-    # queue = sqsResource.get_queue_by_name(QueueName='coin-watch-list')
-    SQS_QUEUE_URL = os.getenv('SQS_QUEUE_URL')
-    maxBatchSize = 1 #current maximum allowed is 10
-    chunks = [coin_list[x:x+maxBatchSize] for x in range(0, len(coin_list), maxBatchSize)]
-    time_to_wait = 0
-    time_to_wait_interval = 2 #seconds
-    for chunk in chunks:
-        
-        entries = []
-        for x in chunk:
-            entry = {
-                    'Id': str(x),
-                    'MessageBody': 'Sent for coin analysis', 
-                     #'MessageGroupId': 'coin-getter',
-                     #'MessageDeduplicationId': str(x),
-                     'MessageAttributes': {
-                        'coin_id': {
-                            'DataType': 'String',
-                            'StringValue': str(x)
-                        },
-                        'days': {
-                            'DataType': 'String',
-                            'StringValue': str(days)
-                        }
-                     }
-            }
-            entries.append(entry)
-            wait_time = time_to_wait + time_to_wait_interval
-        response = sqs.send_message_batch(QueueUrl=SQS_QUEUE_URL,Entries=entries)
-        print(response)
 
 def send_to_sqs(coin_id):
     """
@@ -177,7 +153,7 @@ def send_to_sqs(coin_id):
     # Send message to SQS queue
     response = sqs.send_message(
         QueueUrl=SQS_QUEUE_URL,
-        DelaySeconds=0,
+        # DelaySeconds=1,
         MessageGroupId="coin-getter",
         MessageDeduplicationId=str(coin_id),
         MessageAttributes={
@@ -193,24 +169,89 @@ def send_to_sqs(coin_id):
 
     print(response['MessageId'])
 
-def dynamo_put_coin(coin_id, days, dynamodb=None):
+
+def read_sqs_message(sqs_payload, key_to_find="coin_id", delivery_method="push"):
+    """
+    will read sqs messages and return the body message 
+    There are multiple ways to parse messages from sqs, so we need to be aware of the deliverymethod
+    delivery_method:
+    "pull" - we're pulling from the queue
+    "push" - we're being pushed the data via like a lambda trigger
+    """
     
-    table = dynamodb.Table('watchlist')
-    response = table.put_item(
-       Item={
-            'year': year,
-            'title': title,
-            'info': {
-                'plot': plot,
-                'rating': rating
-            }
-        }
+    if delivery_method == "push":
+        data = sqs_payload["Records"][0]["messageAttributes"][key_to_find]["stringValue"]
+    elif delivery_method == "pull":
+        data = sqs_payload["Messages"][0]["MessageAttributes"][key_to_find]["StringValue"]
+    else:
+        raise Exception(f"Unable to read data from sqs - delivery method {delivery_method} not supported")
+
+    # ["MessageAttributes"][key_to_find]["Value"]
+    # key_we_need = body["MessageAttributes"][key_to_find]["Value"]
+    return data
+
+def delete_message_from_queue(ReceiptHandle):
+    """
+    will delete a message from the sqs queue
+    response = client.delete_message(
+        QueueUrl='string',
+        ReceiptHandle='string'
+    )
+    """
+    sqs = boto3.client('sqs')
+    SQS_QUEUE_URL = os.getenv('SQS_QUEUE_URL')
+
+    response = sqs.delete_message(
+        QueueUrl=SQS_QUEUE_URL,
+        ReceiptHandle=ReceiptHandle
     )
     return response
 
+def read_from_sqs_queue():
+    """
+    will read a message from the sqs queue
+    apparently this can be unreliable, so we should try mulitple times. 
+    eg. 5 times
+    """
+    sqs = boto3.client('sqs')
 
-# send_to_sqs(str("bitcoin"))
-# send_to_sqs(str("SurfMoon"))
+    SQS_QUEUE_URL = os.getenv('SQS_QUEUE_URL')
 
-# mylist = ["shibgf"]
-# batch_send_to_sqs(mylist,days='max')
+    retries = 0
+    retries_max = 5
+    data_found = False
+    attempt_id = f"{arrow.utcnow().format('X')}-getcoin"
+    data_from_message = None
+    while retries < retries_max and data_found == False:
+        response = sqs.receive_message(
+            QueueUrl=SQS_QUEUE_URL,
+            AttributeNames=[
+                
+            ],
+            MessageAttributeNames=[
+                'coin_id',
+            ],
+            MaxNumberOfMessages=1,
+            VisibilityTimeout=123,
+            WaitTimeSeconds=10,
+            ReceiveRequestAttemptId=attempt_id
+        )
+        try:
+            data_from_message = read_sqs_message(sqs_payload=response, key_to_find="coin_id", delivery_method="pull") #["Messages"][0]["MessageAttributes"]["coin_id"]["StringValue"]
+            data_found = True
+            print(f"FOUND {data_from_message}")
+        except:
+            print("did not find")
+            retries = retries + 1
+
+
+    return data_from_message
+
+
+    # except Exception as e:
+    #     print(f"unable to parse {key_to_find} from sqs message: {sqs_payload} ")
+    # exit()
+
+
+# send_to_sqs('adam')
+# read_from_sqs_queue()

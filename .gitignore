@@ -123,3 +123,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+zip_builds/deployment_package.zip
+zip_builds/**
+
+local_testing/
