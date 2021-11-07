@@ -12,8 +12,24 @@ from . import utils
 from dotenv import load_dotenv
 load_dotenv()
 
+def queue_coins_to_get(days=1):
+    """
+    will prepare list of coin ids we need and enqueue them
+    """
+    print("queue_coins_to_get()")
+    watch_list = get_watch_list() #expects list
+    cleaned_queue = []
+    for each_coin in watch_list:
+        if len(each_coin)>0:
+            if each_coin not in cleaned_queue:
+                cleaned_queue.append(each_coin)
+                
+    utils.batch_send_to_sqs(coin_list=cleaned_queue,days=days)
+    print("coins enqueued")
+
 def orchestrate_watchlist_details_check():
     """
+    ** FOR EC2 ***
     *** MAIN ORCHESTRATOR FOR THIS FUNCTIONALITY ***
     orchestrate the querying and processing and storage of market data for coins on watchlist
     then store to s3
@@ -59,7 +75,7 @@ def get_watch_list():
     ATHENA_DATABASE = os.getenv('ATHENA_DATABASE')
 
     query = f"""
-        SELECT id
+        SELECT distinct id
         from {ATHENA_WATCHLIST_TABLE}
         where id != ''
         """ #change this to id for prod

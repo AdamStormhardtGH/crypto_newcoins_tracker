@@ -4,9 +4,9 @@ compares yesterday's markets with today. Creates a series of coins to listen to 
 import arrow
 from . import utils
 import os 
-from dotenv import load_dotenv
-import json
 
+import json
+from dotenv import load_dotenv
 load_dotenv()
 
 
@@ -65,7 +65,7 @@ def compare_yesterday_and_today():
         status = write_delta_to_watch_location(delta_list=delta, date_value=today)
         return clean_names
     else:
-        return "No new coins today"
+        return ["No new coins today"]
 
 
 def write_delta_to_watch_location(delta_list,date_value):
