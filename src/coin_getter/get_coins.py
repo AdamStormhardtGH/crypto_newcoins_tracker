@@ -3,7 +3,7 @@ will pull details for a specific coin from an API (coingecko)
 and write to s3 based on environment variables
 """
 from pycoingecko import CoinGeckoAPI
-import utils
+import cgutils
 import os, time
 from dotenv import load_dotenv
 load_dotenv()
@@ -29,11 +29,11 @@ def orchestrate_coin_getter(coin_id, days=1):
     else:
         print("got coin history. Writing to s3...")
         coin_path_latestdate = coin_data_raw[-1]["date"]
-        date_partition = utils.partition_path_from_date(coin_path_latestdate)
+        date_partition = cgutils.partition_path_from_date(coin_path_latestdate)
         coin_path = f"{COIN_MARKET_DATA_PATH}/{date_partition}/{coin_path_latestdate}_{coin_id}.json"
         print(f"coin path = {coin_path}")
-        coin_data_jsonl = utils.list_of_dicts_to_jsonl(coin_data_raw)
-        s3write_status = utils.write_to_storage(data=coin_data_jsonl, bucket=BUCKET,filename_path=coin_path)
+        coin_data_jsonl = cgutils.list_of_dicts_to_jsonl(coin_data_raw)
+        s3write_status = cgutils.write_to_storage(data=coin_data_jsonl, bucket=BUCKET,filename_path=coin_path)
         print(s3write_status)
     return s3write_status
     
@@ -96,7 +96,7 @@ def extract_historical_market_value_for_coins(coin_details,coin_id,days):
     for each_entry in coin_index:
         coin_data = {
             "id": coin_id,
-            "date": utils.epoch_to_timestamp(coin_details["prices"][each_entry][0]), #was -1 for latest. lets just get the minight volume
+            "date": cgutils.epoch_to_timestamp(coin_details["prices"][each_entry][0]), #was -1 for latest. lets just get the minight volume
             "prices": coin_details["prices"][each_entry][-1],
             "market_caps": coin_details["market_caps"][each_entry][-1],
             "total_volumes": coin_details["total_volumes"][each_entry][-1]
