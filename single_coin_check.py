@@ -3,7 +3,7 @@ test the get and write of a single coin
 """
 
 from src import getwatchlistdetails
-from src.coin_getter import utils as cgutils
+from src.coin_getter import cgutils
 from src.coin_getter import get_coins as cg_getcoins
 import os
 

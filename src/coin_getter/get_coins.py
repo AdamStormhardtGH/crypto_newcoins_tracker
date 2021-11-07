@@ -3,7 +3,7 @@ will pull details for a specific coin from an API (coingecko)
 and write to s3 based on environment variables
 """
 from pycoingecko import CoinGeckoAPI
-import cgutils
+from . import cgutils
 import os, time
 from dotenv import load_dotenv
 load_dotenv()
