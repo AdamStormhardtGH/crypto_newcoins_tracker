@@ -30,9 +30,10 @@ def lambda_handler(event, context):
 
     highvolume_value = 1300000
     watched_coins_formatted = ""
-    sorted_list = sorted(coins_checked, key=lambda d: d['total_volumes']) 
+    sorted_list = sorted(coins_checked, key=lambda d: d['total_volumes']/d['prices'], reverse = True) 
+    top_coins = sorted_list[0:4]
     #top 5 coins today by volume
-    for each_watched_coin in sorted_list:
+    for each_watched_coin in top_coins:
         
         if each_watched_coin['age'] >=1 and each_watched_coin['age']<13:
             price = "{:.12f}".format(each_watched_coin['prices'])
@@ -43,7 +44,7 @@ def lambda_handler(event, context):
             watched_coins_formatted = f"{watched_coins_formatted}{each_watched_coin['id']} - ({each_watched_coin['age']}d old) | 24hr vol: ${round(each_watched_coin['total_volumes']/1000000,2)} Million at ${price} {buy}\n"
 
     report = f"""
-    {utils.datetime_now().format()}(UTC)\n**New Coins: {len(new_coins)}**{new_coins_formatted} \n\n**Watched Coins**\n{watched_coins_formatted}"""
+    {utils.datetime_now().format()}(UTC)\n**New Coins: {len(new_coins)}**{new_coins_formatted} \n\n**Top {len(top_coins)} Watched Coins**\n{watched_coins_formatted}"""
     # {utils.datetime_now().format()}(UTC)\n**New Coins: {len(new_coins)}**{new_coins_formatted} \n\n
 
     utils.notify_discord_bot(report)
