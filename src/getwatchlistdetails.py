@@ -80,7 +80,7 @@ def get_watch_list():
         where id != ''
         """ #change this to id for prod
 
-    client = boto3.client('athena')
+    client = boto3.client('athena', region_name='us-east-1')
     athena_watch_list_query_id = client.start_query_execution(
         QueryString = query,
         

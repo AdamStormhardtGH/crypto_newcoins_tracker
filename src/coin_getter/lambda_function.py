@@ -1,4 +1,4 @@
-import utils
+import cgutils
 import get_coins
 import time
 
@@ -8,9 +8,9 @@ def lambda_handler(sqs_event, context="none"):
     main orchestration executable for coin getter.
     Runs the job with a string as event
     """
-    coin_id = utils.read_sqs_message(sqs_event,key_to_find="coin_id")
+    coin_id = cgutils.read_sqs_message(sqs_event,key_to_find="coin_id")
     try:
-        days = utils.read_sqs_message(sqs_event,key_to_find="days")
+        days = cgutils.read_sqs_message(sqs_event,key_to_find="days")
     except:
         days = 1
 
@@ -28,6 +28,6 @@ def lambda_handler(sqs_event, context="none"):
 
 # print(lambda_handler(my_message,""))
 # lambda_handler("bitcoin","")
-# utils.notify_discord_bot("report")
+# cgutils.notify_discord_bot("report")
 
 
