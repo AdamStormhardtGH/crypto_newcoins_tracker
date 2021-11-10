@@ -1,10 +1,22 @@
+/* 
+
+Provide an overview for all coins, with key metrics:
+- first day added in db
+- latest day we have data for
+- average volume across the data we have
+- latest volume
+- TODO: week this coin belongs to once it's got 7 days or more of data
+- TODO: threshold met of 100m?
+
+*/
+
 -- View Example
-CREATE OR REPLACE VIEW coin_recommendations AS
+CREATE OR REPLACE VIEW coin_recommendations AS  --create table 
 SELECT distinct  
 
 id, 
 symbol,
-name,
+"name",
 added_date,
 latest_price,
 latest_total_volumes,
@@ -21,18 +33,26 @@ FROM "coin_analysis"."watchlist"
 inner join (
   select 
   id as wlid,
-  first_value(prices)
+  last_value(prices)
     over(partition by id
-    order by "date" desc
+    order by "date" 
     rows between unbounded preceding and unbounded following) as latest_price,
-  first_value(total_volumes)
+  last_value(total_volumes)
     over(partition by id
-    order by "date" desc
+    order by "date" 
     rows between unbounded preceding and unbounded following) as latest_total_volumes,
-  first_value("date")
+  last_value("date")
     over(partition by id
-    order by "date" desc
-    rows between unbounded preceding and unbounded following) as latest_date
+    order by "date" 
+    rows between unbounded preceding and unbounded following) as latest_date,
+  date_add('day',6, to_date(to_char(
+    date_add('day', 6, first_value("date")
+    over(partition by id
+    order by "date" asc
+    --rows between unbounded preceding and unbounded following)::timestamp + interval '6 day'), 'IYYY-IW'),'iyyy-iw') + interval '6day'  -- postgres code
+    rows between unbounded preceding and unbounded following) ), 'IYYY-IW'),'iyyy-iw') )
+
+   as end_of_week_buy_date
   
  
   

@@ -105,27 +105,29 @@ def split_string_discord(input_string,character_limit=1500):
     """
     splits a string into chunks for discord notifications
     """
-    chunks = input_string.split('\n')
     
-    # print(chunks)
+    if len(input_string)<= character_limit:
+        return [input_string]
+    else:
+        chunks = input_string.split('\n')
+        messages = []
+        chunk_string = ""
+        for each_item in chunks:
 
-    messages = []
-    chunk_string = ""
-    for each_item in chunks:
-        old_chunkstring = chunk_string
-        new_chunk_string = f"{chunk_string}\n{each_item}"
+            old_chunkstring = chunk_string
+            new_chunk_string = f"{chunk_string}\n{each_item}"
 
-        if len(new_chunk_string) > character_limit:
-            messages.append(old_chunkstring)
-            chunk_string = each_item
-        elif each_item == chunks[-1]:
-            print("last message")
-            messages.append(chunk_string)
-        else:
-            chunk_string = new_chunk_string 
+            if len(new_chunk_string) > character_limit:
+                messages.append(old_chunkstring)
+                chunk_string = each_item
+            elif each_item == chunks[-1]:
+                print("last message")
+                messages.append(chunk_string)
+            else:
+                chunk_string = new_chunk_string 
+            
         
-    
-    return messages
+        return messages
 
 
 def batch_send_to_sqs(coin_list,days=1):
@@ -214,3 +216,4 @@ def dynamo_put_coin(coin_id, days, dynamodb=None):
 
 # mylist = ["shibgf"]
 # batch_send_to_sqs(mylist,days='max')
+

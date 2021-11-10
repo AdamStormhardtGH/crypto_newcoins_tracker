@@ -28,10 +28,11 @@ def lambda_handler(event, context):
     for each in new_coins:
         new_coins_formatted = f"{new_coins_formatted}\n - {each}"
 
-    highvolume_value = 1300000
+    highvolume_value = 100000000 #1300000
     watched_coins_formatted = ""
-    sorted_list = sorted(coins_checked, key=lambda d: d['total_volumes']/d['prices'], reverse = True) 
-    top_coins = sorted_list[0:4]
+    sorted_list = sorted(coins_checked, key=lambda d: d['total_volumes'], reverse = True) 
+    top_coins_num = 10
+    top_coins = sorted_list[0:top_coins_num]
     #top 5 coins today by volume
     for each_watched_coin in top_coins:
         
@@ -40,7 +41,7 @@ def lambda_handler(event, context):
             buy = ""
             # if each_watched_coin['prices'] <0.003 and each_watched_coin['total_volumes'] > highvolume_value:
             if each_watched_coin['total_volumes'] > highvolume_value:
-                buy = "🔥"
+                buy = "🌙"
             watched_coins_formatted = f"{watched_coins_formatted}{each_watched_coin['id']} - ({each_watched_coin['age']}d old) | 24hr vol: ${round(each_watched_coin['total_volumes']/1000000,2)} Million at ${price} {buy}\n"
 
     report = f"""
