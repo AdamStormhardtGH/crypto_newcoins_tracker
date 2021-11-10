@@ -18,6 +18,8 @@ id,
 symbol,
 "name",
 added_date,
+extract(week from (added_date + INTERVAL '6' DAY)) as week_num,
+   
 latest_price,
 latest_total_volumes,
 average_total_volumes,
@@ -44,15 +46,8 @@ inner join (
   last_value("date")
     over(partition by id
     order by "date" 
-    rows between unbounded preceding and unbounded following) as latest_date,
-  date_add('day',6, to_date(to_char(
-    date_add('day', 6, first_value("date")
-    over(partition by id
-    order by "date" asc
-    --rows between unbounded preceding and unbounded following)::timestamp + interval '6 day'), 'IYYY-IW'),'iyyy-iw') + interval '6day'  -- postgres code
-    rows between unbounded preceding and unbounded following) ), 'IYYY-IW'),'iyyy-iw') )
-
-   as end_of_week_buy_date
+    rows between unbounded preceding and unbounded following) as latest_date
+  
   
  
   

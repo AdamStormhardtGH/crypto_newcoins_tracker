@@ -1,4 +1,3 @@
-from re import U
 from src import marketsnapshot
 from src import compareyesterday
 from src import getwatchlistdetails
