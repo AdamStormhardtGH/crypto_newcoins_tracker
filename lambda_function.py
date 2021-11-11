@@ -44,7 +44,7 @@ def lambda_handler(event, context):
             watched_coins_formatted = f"{watched_coins_formatted}{each_watched_coin['id']} - ({each_watched_coin['age']}d old) | 24hr vol: ${round(each_watched_coin['total_volumes']/1000000,2)} Million at ${price} {buy}\n"
 
     report = f"""
-    {utils.datetime_now().format()}(UTC)\n**New Coins: {len(new_coins)}**{new_coins_formatted} \n\n**Top {len(top_coins)} Watched Coins**\n{watched_coins_formatted}"""
+    {utils.datetime_now().format()}(UTC)\n**New Coins: {len(new_coins)}**{new_coins_formatted} \n\n**Top Watched Coins**\n{watched_coins_formatted}"""
     # {utils.datetime_now().format()}(UTC)\n**New Coins: {len(new_coins)}**{new_coins_formatted} \n\n
 
     utils.notify_discord_bot(report)
@@ -53,7 +53,7 @@ def lambda_handler(event, context):
 
 
 
-# lambda_handler("yo","")
+# lambda_handler("execute","")c
 # utils.notify_discord_bot("report")
 
 # getwatchlistdetails.queue_coins_to_get(days='max')

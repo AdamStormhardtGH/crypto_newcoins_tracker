@@ -6,8 +6,9 @@ from datetime import date
 import json, os, time
 import boto3
 from pycoingecko import CoinGeckoAPI
-from . import utils
-# import utils
+from requests.models import HTTPError
+# from . import utils
+import utils
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -169,7 +170,24 @@ def get_coins_details(coin_id ):
     """
     print(f"getting coin details for: {coin_id}")
     cg = CoinGeckoAPI()
-    coin_details = cg.get_coin_market_chart_by_id(id=coin_id,vs_currency="aud", days="max", interval="daily")  #get the 24 hour 
+
+    max_retries = 10
+    retry_number = 0
+    wait = 61
+    success = False
+    while success == False and retry_number < max_retries:
+        try:
+            coin_details = cg.get_coin_market_chart_by_id(id=coin_id,vs_currency="aud", days="max", interval="daily")  #get the 24 hour 
+            success = True
+        except HTTPError as e:
+            if e.response.status_code == 429:
+                retry_number = retry_number + 1
+                print(f"too many requests error. Waiting {wait} seconds")
+                time.sleep(wait) #wait for this to ease up by waiting for a minute
+            else:
+                break
+        
+
     latest_coin_details = extract_latest_market_value_for_coin(coin_details)
     latest_coin_details["id"] = coin_id #add id to help us joins
 
@@ -212,7 +230,8 @@ def extract_latest_market_value_for_coin(coin_details):
 
 # print(orchestrate_watchlist_details_check() )
 
-# cg = CoinGeckoAPI()
-# print(cg.get_coin_market_chart_by_id(id="shibamask",vs_currency="aud", days="0") )
+for each in range(0,100):
+    print(get_coins_details('akira'))
+    
 
 
