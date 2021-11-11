@@ -7,8 +7,8 @@ import json, os, time
 import boto3
 from pycoingecko import CoinGeckoAPI
 from requests.models import HTTPError
-# from . import utils
-import utils
+from . import utils
+# import utils
 
 from dotenv import load_dotenv
 load_dotenv()
