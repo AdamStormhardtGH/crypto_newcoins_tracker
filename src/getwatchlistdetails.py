@@ -230,8 +230,8 @@ def extract_latest_market_value_for_coin(coin_details):
 
 # print(orchestrate_watchlist_details_check() )
 
-for each in range(0,100):
-    print(get_coins_details('akira'))
+# for each in range(0,100):
+#     print(get_coins_details('akira'))
     
 
 
