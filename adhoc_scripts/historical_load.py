@@ -116,28 +116,31 @@ def compress(input_data):
 
 def orchestrate_historic_data_extraction():
     
-    coin_list = get_coins_list()
-    # coin_list = [{"id":"0-5x-long-cosmos-token"}]
+    try:
+        coin_list = get_coins_list()
+        # coin_list = [{"id":"0-5x-long-cosmos-token"}]
 
-    historic_data = []
-    for each_coin in coin_list:
-        if len(each_coin["id"]) > 0:
-            coin_id = each_coin["id"]
-            historic_data.extend(get_coins_details(coin_id=coin_id))
-            print("✅")
-    
-    ldjson = list_of_dicts_to_jsonl(historic_data)
+        historic_data = []
+        for each_coin in coin_list:
+            if len(each_coin["id"]) > 0:
+                coin_id = each_coin["id"]
+                historic_data.extend(get_coins_details(coin_id=coin_id))
+                print("✅")
+        
+        ldjson = list_of_dicts_to_jsonl(historic_data)
 
-    BUCKET = os.getenv('BUCKET')
-    COINS_PATH = os.getenv('COINS_PATH')
-    path = f"{COINS_PATH}/historic_load.json.gz"
+        BUCKET = os.getenv('BUCKET')
+        COINS_PATH = os.getenv('COINS_PATH')
+        path = f"{COINS_PATH}/historic_load.json.gz"
 
-    print(f"bucket: {BUCKET}, path: {path}")
+        print(f"bucket: {BUCKET}, path: {path}")
 
-    gzip_file = compress(ldjson)
-    # write_file(input_string_data=ldjson,filepath="./historic_data.json")
-    write_to_storage(data=gzip_file,bucket=BUCKET,filename_path=path)
-    notify_discord_bot(f"initial load of all coins complete. written to {path}")
+        gzip_file = compress(ldjson)
+        # write_file(input_string_data=ldjson,filepath="./historic_data.json")
+        write_to_storage(data=gzip_file,bucket=BUCKET,filename_path=path)
+        notify_discord_bot(f"initial load of all coins complete. written to {path}")
+    except Exception as e:
+        notify_discord_bot(f"Error with historic load - {e}")
 
 def notify_discord_bot(text_string):
     """
