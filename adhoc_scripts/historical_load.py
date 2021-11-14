@@ -29,6 +29,7 @@ def get_coins_details(coin_id ):
     wait = 61
     success = False
     time.sleep(1.1)
+    coin_details = None
     while success == False and retry_number < max_retries:
         try:
             coin_details = cg.get_coin_market_chart_by_id(id=coin_id,vs_currency="aud", days="max", interval="daily")  #get the 24 hour 
@@ -40,11 +41,16 @@ def get_coins_details(coin_id ):
                 time.sleep(wait) #wait for this to ease up by waiting for a minute
             else:
                 break
+        except Exception:
+            notify_discord_bot(f"error with getting coin marketing chart by id for coin: {coin_id}. Skipping")
+            break
         
+    if coin_details:
+        historic_coin_details_list = extract_historical_market_value_for_coins(coin_details,coin_id=coin_id, days="max")
 
-    historic_coin_details_list = extract_historical_market_value_for_coins(coin_details,coin_id=coin_id, days="max")
-
-    return historic_coin_details_list
+        return historic_coin_details_list
+    else:
+        return []
 
 
 def extract_historical_market_value_for_coins(coin_details,coin_id,days):
@@ -56,25 +62,29 @@ def extract_historical_market_value_for_coins(coin_details,coin_id,days):
 
     #apply the indexing based on start and end
     coin_index = []
-    
-    # print(coin_details["prices"][coins_to_get_startingpoint:end_entry])
-    for eachindex in coin_details["prices"][coins_to_get_startingpoint:end_entry]:
-        coin_index.append(coin_details["prices"].index(eachindex))
+    try:
+        # print(coin_details["prices"][coins_to_get_startingpoint:end_entry])
+        for eachindex in coin_details["prices"][coins_to_get_startingpoint:end_entry]:
+            coin_index.append(coin_details["prices"].index(eachindex))
 
-    age = 0
-    for each_entry in coin_index:
-        coin_data = {
-            "id": coin_id,
-            "date": epoch_to_timestamp(coin_details["prices"][each_entry][0]), #was -1 for latest. lets just get the minight volume
-            "prices": coin_details["prices"][each_entry][-1],
-            "market_caps": coin_details["market_caps"][each_entry][-1],
-            "total_volumes": coin_details["total_volumes"][each_entry][-1],
-            "age": age
-        }
-        age = age + 1
-        coin_history.append(coin_data)
-    
+        age = 0
+        for each_entry in coin_index:
+            coin_data = {
+                "id": coin_id,
+                "date": epoch_to_timestamp(coin_details["prices"][each_entry][0]), #was -1 for latest. lets just get the minight volume
+                "prices": coin_details["prices"][each_entry][-1],
+                "market_caps": coin_details["market_caps"][each_entry][-1],
+                "total_volumes": coin_details["total_volumes"][each_entry][-1],
+                "age": age
+            }
+            age = age + 1
+            coin_history.append(coin_data)
+    except:
+        notify_discord_bot(f"error with extracting historical market value for coins {coin_id}. Skipping")
+        pass
+
     return coin_history
+    
 
 
 def epoch_to_timestamp(epoch_string):
@@ -105,17 +115,16 @@ def compress(input_data):
     return gzip_object
 
 def orchestrate_historic_data_extraction():
-
+    
     coin_list = get_coins_list()
     # coin_list = [{"id":"0-5x-long-cosmos-token"}]
 
     historic_data = []
     for each_coin in coin_list:
-
-        coin_id = each_coin["id"]
-        historic_data.extend(get_coins_details(coin_id=coin_id))
-        print("✅")
-        
+        if len(each_coin["id"]) > 0:
+            coin_id = each_coin["id"]
+            historic_data.extend(get_coins_details(coin_id=coin_id))
+            print("✅")
     
     ldjson = list_of_dicts_to_jsonl(historic_data)
 
