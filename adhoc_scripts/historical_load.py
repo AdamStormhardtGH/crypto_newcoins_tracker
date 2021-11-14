@@ -39,7 +39,7 @@ def get_coins_details(coin_id ):
                 break
         
 
-    historic_coin_details_list = extract_historical_market_value_for_coins(coin_details,coin_id=coin_id)
+    historic_coin_details_list = extract_historical_market_value_for_coins(coin_details,coin_id=coin_id, days="max")
 
     return historic_coin_details_list
 
@@ -54,7 +54,7 @@ def extract_historical_market_value_for_coins(coin_details,coin_id,days):
     #apply the indexing based on start and end
     coin_index = []
     
-    print(coin_details["prices"][coins_to_get_startingpoint:end_entry])
+    # print(coin_details["prices"][coins_to_get_startingpoint:end_entry])
     for eachindex in coin_details["prices"][coins_to_get_startingpoint:end_entry]:
         coin_index.append(coin_details["prices"].index(eachindex))
 
@@ -103,6 +103,7 @@ def orchestrate_historic_data_extraction():
 
         coin_id = each_coin["id"]
         historic_data.extend(get_coins_details(coin_id=coin_id))
+        print("✅")
         
     
     ldjson = list_of_dicts_to_jsonl(historic_data)
