@@ -100,11 +100,10 @@ def orchestrate_historic_data_extraction():
 
     historic_data = []
     for each_coin in coin_list:
-        try:
-            coin_id = each_coin["id"]
-            historic_data.extend(get_coins_details(coin_id=coin_id))
-        except:
-            pass
+
+        coin_id = each_coin["id"]
+        historic_data.extend(get_coins_details(coin_id=coin_id))
+        
     
     ldjson = list_of_dicts_to_jsonl(historic_data)
 
@@ -114,7 +113,7 @@ def orchestrate_historic_data_extraction():
 
     write_file(input_string_data=ldjson,filepath="./historic_data.json")
     write_to_storage(data=ldjson,bucket=BUCKET,filename_path=path)
-    notify_discord_bot("initial load of all coins complete")
+    notify_discord_bot(f"initial load of all coins complete. written to {path}")
 
 def notify_discord_bot(text_string):
     """
