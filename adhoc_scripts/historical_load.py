@@ -10,6 +10,7 @@ from pycoingecko import CoinGeckoAPI
 from requests.models import HTTPError
 import json, time, os, arrow, datetime
 import boto3
+import requests
 
 def get_coins_details(coin_id ):
     """
@@ -113,6 +114,54 @@ def orchestrate_historic_data_extraction():
 
     write_file(input_string_data=ldjson,filepath="./historic_data.json")
     write_to_storage(data=ldjson,bucket=BUCKET,filename_path=path)
+    notify_discord_bot("initial load of all coins complete")
+
+def notify_discord_bot(text_string):
+    """
+    notifies the discord webhook
+    """
+    DISCORD_BOT_WEBHOOK = os.getenv('DISCORD_BOT_WEBHOOK')
+
+    list_of_messages = split_string_discord(text_string)
+
+    for each_message in list_of_messages:
+        time.sleep(.5)
+        data = {
+            "content": str(each_message)
+        }
+        response = requests.post(url=DISCORD_BOT_WEBHOOK, json=data)
+        print(response)
+    
+    print(f"notification complete")
+
+
+def split_string_discord(input_string,character_limit=1500):
+    """
+    splits a string into chunks for discord notifications
+    """
+    
+    if len(input_string)<= character_limit:
+        return [input_string]
+    else:
+        chunks = input_string.split('\n')
+        messages = []
+        chunk_string = ""
+        for each_item in chunks:
+
+            old_chunkstring = chunk_string
+            new_chunk_string = f"{chunk_string}\n{each_item}"
+
+            if len(new_chunk_string) > character_limit:
+                messages.append(old_chunkstring)
+                chunk_string = each_item
+            elif each_item == chunks[-1]:
+                print("last message")
+                messages.append(chunk_string)
+            else:
+                chunk_string = new_chunk_string 
+            
+        
+        return messages
 
 def list_of_dicts_to_jsonl(list_input):
     """
