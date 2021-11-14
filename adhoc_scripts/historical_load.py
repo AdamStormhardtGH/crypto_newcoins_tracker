@@ -11,6 +11,9 @@ from requests.models import HTTPError
 import json, time, os, arrow, datetime
 import boto3
 import requests
+import gzip
+from dotenv import load_dotenv
+load_dotenv()
 
 def get_coins_details(coin_id ):
     """
@@ -94,9 +97,17 @@ def get_coins_list():
     cg = CoinGeckoAPI()
     return cg.get_coins_list()
 
+def compress(input_data):
+    """
+    gzip compression for data
+    """
+    gzip_object = gzip.compress(str.encode(input_data) )
+    return gzip_object
+
 def orchestrate_historic_data_extraction():
 
     coin_list = get_coins_list()
+    coin_list = [{"id":"0-5x-long-cosmos-token"}]
 
     historic_data = []
     for each_coin in coin_list:
@@ -110,10 +121,13 @@ def orchestrate_historic_data_extraction():
 
     BUCKET = os.getenv('BUCKET')
     COINS_PATH = os.getenv('COINS_PATH')
-    path = f"{COINS_PATH}/historic_load.json"
+    path = f"{COINS_PATH}/historic_load.json.gz"
 
-    write_file(input_string_data=ldjson,filepath="./historic_data.json")
-    write_to_storage(data=ldjson,bucket=BUCKET,filename_path=path)
+    print(f"bucket: {BUCKET}, path: {path}")
+
+    gzip_file = compress(ldjson)
+    # write_file(input_string_data=ldjson,filepath="./historic_data.json")
+    write_to_storage(data=gzip_file,bucket=BUCKET,filename_path=path)
     notify_discord_bot(f"initial load of all coins complete. written to {path}")
 
 def notify_discord_bot(text_string):
