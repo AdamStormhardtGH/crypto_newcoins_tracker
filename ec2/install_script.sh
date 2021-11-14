@@ -9,3 +9,5 @@ cd /home/ec2-user/
 git clone https://github.com/AdamRuddGH/crypto_newcoins_tracker.git 
 cd crypto_newcoins_tracker
 pip3 install -r requirements.txt
+
+./setup_cron.sh

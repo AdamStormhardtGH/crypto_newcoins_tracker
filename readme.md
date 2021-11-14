@@ -2,6 +2,7 @@
 
 
 
+
 ## Job 1 - Pull Market list snapshot of all avaialable coins
 
 `marketsnapshot.get_market_snapshot()`

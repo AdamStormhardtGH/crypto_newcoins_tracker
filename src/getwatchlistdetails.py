@@ -125,7 +125,8 @@ def get_watch_list():
 
 def extract_values_from_query_response(input_payload=None):
     """
-    takes query results data and returns a list
+    takes query results data and returns a list.
+    SQS
     """
     # mockdata = {'UpdateCount': 0, 'ResultSet': {'Rows': [{'Data': [{'VarCharValue': 'symbol'}]}, {'Data': [{'VarCharValue': 'pappay'}]}, {'Data': [{'VarCharValue': 'akira'}]}, {'Data': [{'VarCharValue': 'akita'}]}], 'ResultSetMetadata': {'ColumnInfo': [{'CatalogName': 'hive', 'SchemaName': '', 'TableName': '', 'Name': 'symbol', 'Label': 'symbol', 'Type': 'varchar', 'Precision': 2147483647, 'Scale': 0, 'Nullable': 'UNKNOWN', 'CaseSensitive': True}]}}, 'ResponseMetadata': {'RequestId': '540e0078-bd31-40e0-9e8e-07d81c1f7496', 'HTTPStatusCode': 200, 'HTTPHeaders': {'content-type': 'application/x-amz-json-1.1', 'date': 'Sun, 31 Oct 2021 02:57:15 GMT', 'x-amzn-requestid': '540e0078-bd31-40e0-9e8e-07d81c1f7496', 'content-length': '690', 'connection': 'keep-alive'}, 'RetryAttempts': 0}}
     # input_payload = mockdata
@@ -218,6 +219,38 @@ def extract_latest_market_value_for_coin(coin_details):
     
 
     return latest_coin_data
+
+
+def extract_historical_market_value_for_coins(coin_details,coin_id,days):
+
+    print("extract_historical_market_value_for_coins()")
+    end_entry = -1 #the entry which isn't the time at the call - looks like range uses the last item the same as a < symbol. 
+
+    coins_to_get_startingpoint = 0
+    coin_history = []
+
+    #apply the indexing based on start and end
+    coin_index = []
+    
+    print(coin_details["prices"][coins_to_get_startingpoint:end_entry])
+    for eachindex in coin_details["prices"][coins_to_get_startingpoint:end_entry]:
+        # print(eachindex)
+        coin_index.append(coin_details["prices"].index(eachindex))
+
+    age = 0
+    for each_entry in coin_index:
+        coin_data = {
+            "id": coin_id,
+            "date": utils.epoch_to_timestamp(coin_details["prices"][each_entry][0]), #was -1 for latest. lets just get the minight volume
+            "prices": coin_details["prices"][each_entry][-1],
+            "market_caps": coin_details["market_caps"][each_entry][-1],
+            "total_volumes": coin_details["total_volumes"][each_entry][-1],
+            "age": age
+        }
+        age = age + 1
+        coin_history.append(coin_data)
+    
+    return coin_history
 
 
 
