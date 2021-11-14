@@ -107,7 +107,7 @@ def compress(input_data):
 def orchestrate_historic_data_extraction():
 
     coin_list = get_coins_list()
-    coin_list = [{"id":"0-5x-long-cosmos-token"}]
+    # coin_list = [{"id":"0-5x-long-cosmos-token"}]
 
     historic_data = []
     for each_coin in coin_list:
