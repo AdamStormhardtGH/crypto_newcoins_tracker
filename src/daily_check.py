@@ -42,6 +42,17 @@ def join_multiple_data_files_ldjson(input_folder_path,output_path,file_prefix=No
     except:
         return ""
 
+def rmdir(directory):
+    directory = Path(directory)
+    for item in directory.iterdir():
+        if item.is_dir():
+            rmdir(item)
+        else:
+            item.unlink()
+    directory.rmdir()
+
+
+
 
 def orchestrate_daily_coin_check():
     """
@@ -64,8 +75,8 @@ def orchestrate_daily_coin_check():
     date_month = arrow.get(day).format("MM")
     date_day = arrow.get(day).format("DD")
 
-    temp_write_path = f"~/temp/{day}/splitcoins"
-    temp_concatinated_file_path = f"~/temp/{day}"
+    temp_write_path = f"temp_coin_dir/{day}/splitcoins"
+    temp_concatinated_file_path = f"temp_coin_dir/{day}"
     Path(temp_write_path).mkdir(parents=True, exist_ok=True)
     Path(temp_concatinated_file_path).mkdir(parents=True, exist_ok=True)
 
@@ -112,5 +123,6 @@ def orchestrate_daily_coin_check():
         outcome = utils.write_to_storage(data=concat_contents,bucket=BUCKET,filename_path=full_path_to_write )
         print(outcome)
 
+        rmdir(Path("temp_coin_dir/"))
     utils.notify_discord_bot(f"initial load complete - {outcome}")
         
