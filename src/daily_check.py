@@ -55,9 +55,9 @@ def orchestrate_daily_coin_check():
     BUCKET = os.getenv('BUCKET')
     ALL_COINS_PATH = os.getenv('ALL_COINS_PATH')
     
-    # coins_list = marketsnapshot.get_coins_list()
+    coins_list = marketsnapshot.get_coins_list()
 
-    coins_list = [{"id":"cointribe"},{"id":"exodia-inu"}, {"id":"gameology"}, {"id":"gameologyv2"}, {"id":"gameonetoken"}, {"id":"gamercoin"} ]
+    # coins_list = [{"id":"cointribe"},{"id":"exodia-inu"}, {"id":"gameology"}, {"id":"gameologyv2"}, {"id":"gameonetoken"}, {"id":"gamercoin"} ]
 
     day = utils.datetime_now().shift(days=-1).format("YYYY-MM-DD")
     date_year = arrow.get(day).format("YYYY")
@@ -112,5 +112,5 @@ def orchestrate_daily_coin_check():
         outcome = utils.write_to_storage(data=concat_contents,bucket=BUCKET,filename_path=full_path_to_write )
         print(outcome)
 
-    # utils.notify_discord_bot(f"initial load complete - {outcome}")
+    utils.notify_discord_bot(f"initial load complete - {outcome}")
         
