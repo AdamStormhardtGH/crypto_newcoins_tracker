@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# mac files
+.DS_Store
+
 # Distribution / packaging
 .Python
 build/
@@ -129,3 +132,6 @@ zip_builds/deployment_package.zip
 zip_builds/**
 
 local_testing/
+
+coins/
+~/
