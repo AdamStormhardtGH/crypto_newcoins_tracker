@@ -82,11 +82,14 @@ def read_from_storage(bucket, filename_path):
     )
     return response
 
-def notify_discord_bot(text_string):
+def notify_discord_bot(text_string,webhook=None):
     """
     notifies the discord webhook
     """
-    DISCORD_BOT_WEBHOOK = os.getenv('DISCORD_BOT_WEBHOOK')
+    if webhook == None:
+        DISCORD_BOT_WEBHOOK = os.getenv('DISCORD_BOT_WEBHOOK')
+    else:
+        DISCORD_BOT_WEBHOOK = webhook
 
     list_of_messages = split_string_discord(text_string)
 
