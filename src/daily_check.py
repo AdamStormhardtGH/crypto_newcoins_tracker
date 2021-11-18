@@ -65,6 +65,7 @@ def orchestrate_daily_coin_check():
 
     BUCKET = os.getenv('BUCKET')
     ALL_COINS_PATH = os.getenv('ALL_COINS_PATH')
+    DEBUG_WEBHOOK = os.getenv('DEBUG_WEBHOOK')
     
     coins_list = marketsnapshot.get_coins_list()
 
@@ -88,7 +89,7 @@ def orchestrate_daily_coin_check():
     #now lets process the coins
     for each_coin in coins_list_ids:
         time.sleep(0.9)
-        print(f"looking for {each_coin}")
+        utils.notify_discord_bot(f"looking for {each_coin}",DEBUG_WEBHOOK)
         try: 
             latest_coin_details = getwatchlistdetails.get_coins_details(each_coin)
             
@@ -102,7 +103,7 @@ def orchestrate_daily_coin_check():
         except Exception as e:
             print(f"skipped coin {each_coin} due to errors - {e}")
     
-    # utils.notify_discord_bot(f"daily coin check for all coins complete for {day}. compressing and writing to s3...")
+    utils.notify_discord_bot(f"daily coin check for all coins complete for {day}. compressing and writing to s3...",DEBUG_WEBHOOK)
     
     join_files_path = join_multiple_data_files_ldjson(input_folder_path=temp_write_path,output_path=temp_concatinated_file_path, file_prefix=day)
     gz_path = f"{join_files_path}.gz"
@@ -124,5 +125,5 @@ def orchestrate_daily_coin_check():
         print(outcome)
 
         rmdir(Path("temp_coin_dir/"))
-    utils.notify_discord_bot(f"initial load complete - {outcome}")
+    utils.notify_discord_bot(f"daily load complete - {outcome}",DEBUG_WEBHOOK)
         
