@@ -35,7 +35,7 @@ def join_multiple_data_files_ldjson(input_folder_path,output_path,file_prefix=No
             coin_data = re.sub(r"^$\n","",coin_data)
             consolidated_dataset.append(coin_data)
         
-        output_string = ''.join(consolidated_dataset)
+        output_string = '\n'.join(consolidated_dataset)
         with open(output_full_path,"w") as hist_file:
             hist_file.write(output_string)
         return output_full_path
